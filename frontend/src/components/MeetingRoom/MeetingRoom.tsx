@@ -26,6 +26,7 @@ import {
 } from '@/components/Icons';
 import { Meeting, Participant, ChatMessage, ReactionItem } from '@/types';
 import { getWebSocketUrl, getMeetingMessages } from '@/lib/api';
+import Whiteboard from './Whiteboard';
 
 interface MeetingRoomProps {
   meeting: Meeting;
@@ -68,7 +69,6 @@ export default function MeetingRoom({
 
   const localVideoRef = useRef<HTMLVideoElement>(null);
   const screenShareVideoRef = useRef<HTMLVideoElement>(null);
-  const whiteboardCanvasRef = useRef<HTMLCanvasElement>(null);
 
   const localStreamRef = useRef<MediaStream | null>(null);
   const screenStreamRef = useRef<MediaStream | null>(null);
@@ -656,50 +656,12 @@ export default function MeetingRoom({
             </div>
           )}
 
-          {showWhiteboard && (
-            <div className="absolute inset-4 z-30 bg-[#20232a] border border-gray-700 rounded-2xl shadow-2xl flex flex-col overflow-hidden">
-              <div className="p-3 bg-[#181a20] border-b border-gray-700 flex items-center justify-between">
-                <div className="flex items-center gap-2 text-sm font-bold text-white">
-                  <WhiteboardIcon className="w-5 h-5 text-blue-400" />
-                  Interactive Zoom Whiteboard
-                </div>
-                <button
-                  onClick={() => setShowWhiteboard(false)}
-                  className="p-1 rounded-lg hover:bg-gray-700 text-gray-400 hover:text-white"
-                >
-                  <XIcon className="w-5 h-5" />
-                </button>
-              </div>
-              <div className="flex-1 bg-white relative">
-                <canvas
-                  ref={whiteboardCanvasRef}
-                  className="w-full h-full cursor-crosshair"
-                  onMouseDown={(e) => {
-                    const canvas = whiteboardCanvasRef.current;
-                    if (!canvas) return;
-                    const ctx = canvas.getContext('2d');
-                    if (!ctx) return;
-                    ctx.strokeStyle = '#0e71eb';
-                    ctx.lineWidth = 3;
-                    ctx.lineCap = 'round';
-                    ctx.beginPath();
-                    const rect = canvas.getBoundingClientRect();
-                    ctx.moveTo(e.clientX - rect.left, e.clientY - rect.top);
-                    const draw = (moveEvent: MouseEvent) => {
-                      ctx.lineTo(moveEvent.clientX - rect.left, moveEvent.clientY - rect.top);
-                      ctx.stroke();
-                    };
-                    const stop = () => {
-                      window.removeEventListener('mousemove', draw);
-                      window.removeEventListener('mouseup', stop);
-                    };
-                    window.addEventListener('mousemove', draw);
-                    window.addEventListener('mouseup', stop);
-                  }}
-                />
-              </div>
-            </div>
-          )}
+          <Whiteboard
+            isOpen={showWhiteboard}
+            onClose={() => setShowWhiteboard(false)}
+            broadcastChannel={bcRef.current}
+            ws={wsRef.current}
+          />
 
           <div
             className={`w-full h-full grid gap-4 place-content-center items-center justify-center ${
